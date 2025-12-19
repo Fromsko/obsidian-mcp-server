@@ -58,3 +58,45 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag v${{ steps.version.outputs.new }}
           git push origin v${{ steps.version.outputs.new }}
+
+      - name: 📝 生成更新日志
+        if: steps.version.outputs.changed == 'true'
+        id: changelog
+        run: |
+          # 获取上一个 tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            # 如果没有上一个 tag，获取所有提交
+            CHANGELOG=$(git log --pretty=format:"- %s" -10)
+          else
+            # 获取两个 tag 之间的提交
+            CHANGELOG=$(git log --pretty=format:"- %s" ${PREV_TAG}..HEAD)
+          fi
+          # 处理多行输出
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: 🎉 创建 GitHub Release
+        if: steps.version.outputs.changed == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.new }}
+          name: v${{ steps.version.outputs.new }}
+          body: |
+            ## 🚀 v${{ steps.version.outputs.new }}
+
+            ### 📋 更新内容
+            ${{ steps.changelog.outputs.content }}
+
+            ### 📦 安装
+            ```bash
+            npm install @andysama/obsidian-mcp-server@${{ steps.version.outputs.new }}
+            ```
+
+            或使用 npx 直接运行：
+            ```bash
+            npx @andysama/obsidian-mcp-server --vault "/path/to/vault"
+            ```
+          draft: false
+          prerelease: false
