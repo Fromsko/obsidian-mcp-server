@@ -221,6 +221,171 @@ async function deleteNote(notePath: string): Promise<string> {
     return `笔记删除成功: ${notePath}`;
 }
 
+// 获取提示词使用指南
+async function getPromptGuide(): Promise<string> {
+    const guide = `# 🗂️ Obsidian 知识库整理助手 - 使用指南
+
+## 一、提示词简介
+
+这是一个用于将杂乱笔记整理为标准 Obsidian Markdown 文档的提示词。它可以：
+- 自动生成标准的 Frontmatter（YAML）
+- 根据内容智能分类并推荐存放路径
+- 规范化 Markdown 结构
+- 自动推荐相关笔记链接
+
+## 二、如何添加提示词
+
+### 方法 1：在 AI 对话中直接使用
+
+1. 复制下方提示词内容
+2. 在与 AI 的对话中粘贴提示词
+3. 在提示词末尾粘贴你要整理的笔记内容
+4. AI 会返回整理好的 Markdown 文档
+
+### 方法 2：保存为 Obsidian 模板
+
+1. 在 Obsidian 中创建一个模板文件夹（如 Templates/）
+2. 创建新笔记，命名为「知识库整理助手提示词.md」
+3. 将提示词内容粘贴进去
+4. 需要时复制使用
+
+### 方法 3：配置为 AI 工具的系统提示词
+
+如果你使用的 AI 工具支持自定义系统提示词（如 ChatGPT、Claude 等）：
+1. 进入设置/偏好设置
+2. 找到「自定义指令」或「系统提示词」选项
+3. 将提示词粘贴到相应位置
+4. 保存后，AI 会自动按照提示词格式整理笔记
+
+## 三、提示词内容
+
+\`\`\`
+你是一个 Obsidian 知识库整理助手。
+
+请将下面杂乱的笔记内容，整理为「Obsidian 可直接使用的 Markdown 文档」，要求：
+
+## 一、生成标准 Obsidian Frontmatter（YAML）
+
+---
+category: <主分类>
+tags: [tag1, tag2, tag3]
+summary: <一句话总结>
+icon: <lucide图标名或emoji>
+status: <draft | active | archived>
+folder: <推荐存放路径>
+created: <YYYY-MM-DD>
+---
+
+### 分类规则（category → folder 映射）
+
+| category | 说明 | 对应文件夹路径 |
+|----------|------|----------------|
+| frontend | 前端开发（JS/TS/React/Vue/CSS等） | 知识点/02-前端知识/ |
+| backend | 后端开发（Rust/Java/Scala等） | 知识点/05-后端知识/ |
+| hardware | 硬件/嵌入式（STM32/SystemRDL/FPGA） | 知识点/03-硬件学习/ |
+| ai | 人工智能/LLM/MCP/提示词 | 知识点/04-人工智能/ |
+| docker | Docker/容器化 | 知识点/01-Docker/ |
+| devops | CI/CD/Git/部署 | 知识点/00-闲置笔记/git/ |
+| linux | Linux 系统/命令 | 知识点/00-闲置笔记/Liunx/ |
+| database | 数据库相关 | 知识点/00-闲置笔记/数据库/ |
+| server | 服务器环境配置 | 知识点/00-闲置笔记/服务器安装环境/ |
+| security | 密钥/认证/安全 | 知识点/密钥/ |
+| music | 乐理/吉他/音乐学习 | 乐理/ |
+| misc | 杂项/临时笔记 | 知识点/00-闲置笔记/ |
+
+## 二、正文结构要求
+
+- 使用清晰的 Markdown 标题（# / ## / ###）
+- 合并重复或相近内容
+- 技术笔记优先结构化（列表 / 步骤 / 代码块）
+- 保留原始想法，不要过度改写语义
+- 代码块必须标注语言类型
+
+## 三、文件命名规范
+
+- 格式：主题-子主题.md 或 序号-主题.md
+- 示例：Gitea-Actions-部署方案.md、01-吉他谱寻找.md
+- 避免特殊字符，使用中划线连接
+
+## 四、在文末新增「🔗 Related Notes」章节
+
+- 推测 3~5 个可能相关的笔记标题
+- 使用 Obsidian 双链格式：[[笔记名称]]
+
+## 五、输出要求
+
+- 只输出整理后的 Markdown
+- 不要解释整理过程
+- 不要输出多余说明
+- **必须在 Frontmatter 中包含 folder 字段，精确到子目录**
+
+---
+
+下面是需要整理的原始笔记内容：
+\`\`\`
+
+## 四、使用示例
+
+### 输入示例
+
+\`\`\`
+react hooks 学习笔记
+useState 用来管理状态
+useEffect 处理副作用，比如请求数据
+自定义hook要用use开头
+\`\`\`
+
+### 输出示例
+
+\`\`\`markdown
+---
+category: frontend
+tags: [react, hooks, useState, useEffect]
+summary: React Hooks 核心概念学习笔记
+icon: ⚛️
+status: active
+folder: 知识点/02-前端知识/React/
+created: 2024-12-26
+---
+
+# React Hooks 学习笔记
+
+## useState
+
+用于管理组件状态。
+
+## useEffect
+
+处理副作用，常见用途：
+- 请求数据
+- 订阅事件
+- 操作 DOM
+
+## 自定义 Hook
+
+- 命名必须以 \`use\` 开头
+- 可以复用状态逻辑
+
+---
+
+## 🔗 Related Notes
+
+- [[React 基础入门]]
+- [[useState 详解]]
+- [[useEffect 最佳实践]]
+- [[自定义 Hook 封装技巧]]
+\`\`\`
+
+## 五、注意事项
+
+1. **保持原意**：提示词会保留你的原始想法，只做结构化整理
+2. **智能分类**：根据内容自动判断分类和存放路径
+3. **灵活调整**：生成的 folder 路径可以根据实际情况手动调整
+4. **批量处理**：可以一次性粘贴多段笔记内容进行整理
+`;
+    return guide;
+}
+
 // 全文搜索
 async function fullTextSearch(keyword: string): Promise<Array<{ path: string; matches: string[] }>> {
     const files = await glob("**/*.md", {
@@ -364,6 +529,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
                 required: ["path"],
             },
         },
+        {
+            name: "get_prompt_guide",
+            description: "获取 Obsidian 知识库整理助手提示词的使用指南，展示如何添加和使用这个提示词",
+            inputSchema: {
+                type: "object",
+                properties: {},
+            },
+        },
     ],
 }));
 
@@ -437,6 +610,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 const result = await createFolder(args?.path as string);
                 return {
                     content: [{ type: "text", text: result }],
+                };
+            }
+
+            case "get_prompt_guide": {
+                const guide = await getPromptGuide();
+                return {
+                    content: [{ type: "text", text: guide }],
                 };
             }
 
