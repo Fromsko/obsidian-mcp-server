@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'package.json'
+      - "package.json"
 
 jobs:
   publish:
@@ -36,12 +36,12 @@ jobs:
         if: steps.version.outputs.changed == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
 
       - name: 📦 安装依赖
         if: steps.version.outputs.changed == 'true'
-        run: npm ci
+        run: npm install
 
       - name: 🔨 构建项目
         if: steps.version.outputs.changed == 'true'
@@ -93,12 +93,12 @@ jobs:
 
             ### 📦 安装
             ```bash
-            npm install @andysama/obsidian-mcp-server@${{ steps.version.outputs.new }}
+            npm install @fromsko/obsidian-mcp-server@${{ steps.version.outputs.new }}
             ```
 
-            或使用 npx 直接运行：
+            或使用 bunx 直接运行：
             ```bash
-            npx @andysama/obsidian-mcp-server --vault "/path/to/vault"
+            bun x @fromsko/obsidian-mcp-server --vault "/path/to/vault"
             ```
           draft: false
           prerelease: false
