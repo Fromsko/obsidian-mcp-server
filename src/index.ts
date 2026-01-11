@@ -6,31 +6,10 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { exec } from "child_process";
 import * as fs from "fs/promises";
 import { glob } from "glob";
 import matter from "gray-matter";
 import * as path from "path";
-import { promisify } from "util";
-
-const execAsync = promisify(exec);
-
-// Git Commit 类型定义
-const COMMIT_TYPES = {
-  feat: { emoji: "✨", description: "新功能" },
-  fix: { emoji: "🐛", description: "Bug 修复" },
-  docs: { emoji: "📝", description: "文档更新" },
-  style: { emoji: "🎨", description: "代码格式" },
-  refactor: { emoji: "♻️", description: "重构" },
-  perf: { emoji: "⚡", description: "性能优化" },
-  test: { emoji: "✅", description: "测试" },
-  build: { emoji: "📦", description: "构建/依赖" },
-  ci: { emoji: "👷", description: "CI/CD" },
-  chore: { emoji: "🔧", description: "杂项" },
-  revert: { emoji: "⏪", description: "回滚" },
-} as const;
-
-type CommitType = keyof typeof COMMIT_TYPES;
 
 // 解析命令行参数
 function parseArgs(): { vaultPath: string } {
@@ -416,76 +395,6 @@ created: 2024-12-26
   return guide;
 }
 
-// Git 相关函数
-async function execGit(
-  command: string,
-  cwd?: string
-): Promise<{ stdout: string; stderr: string }> {
-  try {
-    return await execAsync(`git ${command}`, { cwd: cwd || VAULT_PATH });
-  } catch (error: any) {
-    throw new Error(`Git 命令执行失败: ${error.message}`);
-  }
-}
-
-// Git 提交
-async function gitCommit(
-  type: string,
-  description: string,
-  files?: string[],
-  cwd?: string
-): Promise<string> {
-  const workDir = cwd || VAULT_PATH;
-
-  // 验证提交类型
-  if (!COMMIT_TYPES[type as CommitType]) {
-    const validTypes = Object.entries(COMMIT_TYPES)
-      .map(([k, v]) => `${v.emoji} ${k}: ${v.description}`)
-      .join("\n");
-    throw new Error(`无效的提交类型: ${type}\n\n可用类型:\n${validTypes}`);
-  }
-
-  const { emoji } = COMMIT_TYPES[type as CommitType];
-  const commitMessage = `${emoji} ${type}: ${description}`;
-
-  // 添加文件
-  if (files && files.length > 0) {
-    for (const file of files) {
-      await execGit(`add "${file}"`, workDir);
-    }
-  } else {
-    // 添加所有更改
-    await execGit("add -A", workDir);
-  }
-
-  // 检查是否有待提交的更改
-  const { stdout: status } = await execGit("status --porcelain", workDir);
-  if (!status.trim()) {
-    return "没有需要提交的更改";
-  }
-
-  // 执行提交
-  await execGit(`commit -m "${commitMessage}"`, workDir);
-
-  return `提交成功: ${commitMessage}`;
-}
-
-// 获取 Git 状态
-async function gitStatus(cwd?: string): Promise<string> {
-  const { stdout } = await execGit("status --short", cwd || VAULT_PATH);
-  if (!stdout.trim()) {
-    return "工作区干净，没有待提交的更改";
-  }
-  return stdout;
-}
-
-// 获取提交类型列表
-function getCommitTypes(): string {
-  return Object.entries(COMMIT_TYPES)
-    .map(([type, { emoji, description }]) => `${emoji} ${type}: ${description}`)
-    .join("\n");
-}
-
 // 全文搜索
 async function fullTextSearch(
   keyword: string
@@ -664,69 +573,6 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {},
       },
     },
-    {
-      name: "git_commit",
-      description:
-        "按照规范格式提交 Git 更改。格式: <emoji> <type>: <description>",
-      inputSchema: {
-        type: "object",
-        properties: {
-          type: {
-            type: "string",
-            description:
-              "提交类型: feat(新功能), fix(Bug修复), docs(文档), style(格式), refactor(重构), perf(性能), test(测试), build(构建), ci(CI/CD), chore(杂项), revert(回滚)",
-            enum: [
-              "feat",
-              "fix",
-              "docs",
-              "style",
-              "refactor",
-              "perf",
-              "test",
-              "build",
-              "ci",
-              "chore",
-              "revert",
-            ],
-          },
-          description: {
-            type: "string",
-            description: "提交描述（简洁明了，使用祈使语气）",
-          },
-          files: {
-            type: "array",
-            items: { type: "string" },
-            description: "要提交的文件列表（可选，留空则提交所有更改）",
-          },
-          cwd: {
-            type: "string",
-            description: "工作目录（可选，默认为笔记库路径）",
-          },
-        },
-        required: ["type", "description"],
-      },
-    },
-    {
-      name: "git_status",
-      description: "获取 Git 工作区状态",
-      inputSchema: {
-        type: "object",
-        properties: {
-          cwd: {
-            type: "string",
-            description: "工作目录（可选，默认为笔记库路径）",
-          },
-        },
-      },
-    },
-    {
-      name: "git_commit_types",
-      description: "获取所有可用的 Git 提交类型及其说明",
-      inputSchema: {
-        type: "object",
-        properties: {},
-      },
-    },
   ],
 }));
 
@@ -813,32 +659,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const guide = await getPromptGuide();
         return {
           content: [{ type: "text", text: guide }],
-        };
-      }
-
-      case "git_commit": {
-        const result = await gitCommit(
-          args?.type as string,
-          args?.description as string,
-          args?.files as string[] | undefined,
-          args?.cwd as string | undefined
-        );
-        return {
-          content: [{ type: "text", text: result }],
-        };
-      }
-
-      case "git_status": {
-        const status = await gitStatus(args?.cwd as string | undefined);
-        return {
-          content: [{ type: "text", text: status }],
-        };
-      }
-
-      case "git_commit_types": {
-        const types = getCommitTypes();
-        return {
-          content: [{ type: "text", text: types }],
         };
       }
 
