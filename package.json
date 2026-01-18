@@ -1,6 +1,6 @@
 {
   "name": "@fromsko/obsidian-mcp-server",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "MCP server for Obsidian notes - search and read your Obsidian vault",
   "type": "module",
   "main": "dist/index.js",
