@@ -1,5 +1,5 @@
 ---
-description: Lint, format, and commit changes with version bump using bun
+description: Lint, format, and commit changes with version bump using bun (manual trigger only)
 ---
 
 1. Check if there are any changes to commit using `git status`
